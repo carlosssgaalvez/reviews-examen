@@ -40,19 +40,29 @@ def startup_event():
 @app.get("/")
 async def home(request: Request, search_address: str = None):
     user = request.session.get('user')
-    reviews = list(reviews_collection.find({}))
     
-    # Lógica para centrar el mapa (Requisito: Búsqueda) 
-    map_center = [36.7213, -4.4214] # Málaga por defecto
+    # --- CORRECCIÓN DEL ERROR ---
+    # Recuperamos las reseñas y convertimos el '_id' a texto para que no falle el mapa
+    reviews_cursor = reviews_collection.find({})
+    reviews = []
+    for doc in reviews_cursor:
+        doc['_id'] = str(doc['_id']) # Convertimos ObjectId a String
+        reviews.append(doc)
+    # ----------------------------
+    
+    # Lógica para centrar el mapa (Málaga por defecto)
+    map_center = [36.7213, -4.4214] 
     if search_address:
          async with httpx.AsyncClient() as client:
-            resp = await client.get(
-                f"https://nominatim.openstreetmap.org/search?q={search_address}&format=json",
-                headers={'User-Agent': 'ReViewsApp/1.0'}
-            )
-            data = resp.json()
-            if data:
-                map_center = [float(data[0]['lat']), float(data[0]['lon'])]
+            try:
+                resp = await client.get(
+                    f"https://nominatim.openstreetmap.org/search?q={search_address}&format=json",
+                    headers={'User-Agent': 'ReViewsApp/1.0'}
+                )
+                data = resp.json()
+                if data:
+                    map_center = [float(data[0]['lat']), float(data[0]['lon'])]
+            except: pass
 
     return templates.TemplateResponse("index.html", {
         "request": request, 
