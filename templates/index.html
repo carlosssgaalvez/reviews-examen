@@ -2,81 +2,91 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Examen App</title>
+    <title>ReViews - Opiniones</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { padding: 20px; }
-        .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-        .card { padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
-        .card img { max-width: 100%; height: auto; border-radius: 4px; }
-        .navbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;}
+        #map { height: 400px; width: 100%; border-radius: 8px; margin-bottom: 20px;}
+        .rating { color: gold; font-weight: bold; }
     </style>
 </head>
 <body>
-
-    <nav class="navbar">
-        <h1>🚀 Título del Proyecto</h1>
-        {% if user %}
-            <div>
-                <span>Hola, {{ user.name }}</span>
-                <a href="/logout" role="button" class="secondary outline">Salir</a>
-            </div>
-        {% endif %}
+    <nav class="container-fluid">
+        <ul><li><strong>⭐ ReViews</strong></li></ul>
+        <ul>
+            {% if user %}
+                <li>{{ user.name }}</li>
+                <li><a href="/logout" role="button" class="secondary">Salir</a></li>
+            {% else %}
+                <li><a href="/login" role="button">Entrar con Google</a></li>
+            {% endif %}
+        </ul>
     </nav>
 
-    {% if user %}
-        
-        <article>
-            <header>Añadir Nuevo Elemento</header>
-            <form action="/add" method="post" enctype="multipart/form-data">
-                <div class="grid">
-                    <label>
-                        Título / Nombre
-                        <input type="text" name="titulo" required>
-                    </label>
-                    <label>
-                        Descripción / Info
-                        <input type="text" name="descripcion" required>
-                    </label>
-                </div>
-                <label>
-                    Imagen (Opcional)
-                    <input type="file" name="image">
-                </label>
-                <button type="submit">Guardar</button>
+    <main class="container">
+        {% if user %}
+            <form action="/" method="get" style="display: flex; gap: 10px;">
+                <input type="text" name="search_address" placeholder="Buscar dirección para centrar mapa...">
+                <button type="submit" style="width: auto;">Buscar en Mapa</button>
             </form>
-        </article>
+            <div id="map"></div>
 
-        <hr>
-
-        <h3>Listado Actual</h3>
-        <div class="grid-cards">
-            {% for item in items %}
-            <article class="card">
-                {% if item.image_url %}
-                    <img src="{{ item.image_url }}" alt="Imagen">
-                {% endif %}
-                <header><strong>{{ item.titulo }}</strong></header>
-                <p>{{ item.descripcion }}</p>
-                <footer>
-                    <small>Subido por: {{ item.owner_name }}</small>
-                    <form action="/delete" method="post" style="margin-top:10px;">
-                        <input type="hidden" name="titulo" value="{{ item.titulo }}">
-                        <button type="submit" class="contrast outline" style="width:100%;">Borrar</button>
-                    </form>
-                </footer>
+            <article>
+                <header>✍️ Nueva Reseña</header>
+                <form action="/add" method="post" enctype="multipart/form-data">
+                    <div class="grid">
+                        <input type="text" name="establishment" placeholder="Nombre (ej: Casa Lola)" required>
+                        <input type="text" name="address" placeholder="Dirección (ej: Calle Granada 46, Málaga)" required>
+                    </div>
+                    <label>Valoración (0-5): <input type="number" name="rating" min="0" max="5" required></label>
+                    <label>Foto: <input type="file" name="image"></label>
+                    <button type="submit">Publicar Reseña</button>
+                </form>
             </article>
-            {% endfor %}
-        </div>
 
-    {% else %}
-        <article style="text-align: center; margin-top: 10vh;">
-            <header>Bienvenido al Examen</header>
-            <p>Necesitas iniciar sesión para gestionar la aplicación.</p>
-            <a href="/login" role="button" class="contrast">Iniciar sesión con Google</a>
-        </article>
+            <h3>Reseñas Recientes</h3>
+            <div class="grid">
+                {% for review in reviews %}
+                <article>
+                    <header>
+                        <strong>{{ review.establishment }}</strong>
+                        <span class="rating">★ {{ review.rating }}/5</span>
+                    </header>
+                    <p>📍 {{ review.address }}</p>
+                    <p><small>GPS: {{ review.coordinates.lat }}, {{ review.coordinates.lon }}</small></p>
+                    <footer>
+                        <a href="/review/{{ review._id }}" role="button" class="outline">Ver Detalles Técnicos</a>
+                    </footer>
+                </article>
+                {% endfor %}
+            </div>
+
+        {% else %}
+            <article style="text-align: center;">
+                <h2>Bienvenido a ReViews</h2>
+                <p>Debes identificarte para ver y crear reseñas.</p>
+                <a href="/login" role="button">Iniciar Sesión</a>
+            </article>
+        {% endif %}
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    {% if user %}
+    <script>
+        // Inicializar mapa centrado en lo que diga el backend 
+        var map = L.map('map').setView({{ map_center | tojson }}, 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+
+        // Añadir marcadores de las reseñas [cite: 355]
+        var reviews = {{ reviews | tojson }};
+        reviews.forEach(r => {
+            if(r.coordinates.lat != 0) {
+                L.marker([r.coordinates.lat, r.coordinates.lon])
+                 .addTo(map)
+                 .bindPopup(`<b>${r.establishment}</b><br>★ ${r.rating}`);
+            }
+        });
+    </script>
     {% endif %}
-
 </body>
 </html>

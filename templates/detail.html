@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalle Reseña</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+</head>
+<body class="container" style="padding-top: 20px;">
+    <a href="/" role="button" class="secondary outline">← Volver al listado</a>
+    
+    <article>
+        <header>
+            <h1>{{ review.establishment }}</h1>
+            <h3 style="color: gold;">Valoración: {{ review.rating }} / 5</h3>
+        </header>
+
+        <div class="grid">
+            <div>
+                <h4>📍 Ubicación</h4>
+                <p>{{ review.address }}</p>
+                <p>Coordenadas: {{ review.coordinates.lat }}, {{ review.coordinates.lon }}</p>
+            </div>
+            
+            {% if review.image_url %}
+            <div>
+                <img src="{{ review.image_url }}" alt="Foto del sitio" style="border-radius: 8px; max-width: 100%;">
+            </div>
+            {% endif %}
+        </div>
+
+        <hr>
+
+        <details open>
+            <summary>📂 Datos de Autoría y Token (Requisito Examen)</summary>
+            <ul>
+                <li><strong>Autor:</strong> {{ review.author_name }} ({{ review.author_email }})</li>
+                <li><strong>Emisión Token:</strong> {{ review.token_details.created_at }}</li>
+                <li><strong>Caducidad Token:</strong> {{ review.token_details.expires_at }}</li>
+                <li><strong>Token OAuth:</strong></li>
+            </ul>
+            <pre><code>{{ review.token_details.access_token }}</code></pre>
+        </details>
+    </article>
+</body>
+</html>
