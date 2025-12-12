@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examen App</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <style>
+        body { padding: 20px; }
+        .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .card { padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .card img { max-width: 100%; height: auto; border-radius: 4px; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;}
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <h1>🚀 Título del Proyecto</h1>
+        {% if user %}
+            <div>
+                <span>Hola, {{ user.name }}</span>
+                <a href="/logout" role="button" class="secondary outline">Salir</a>
+            </div>
+        {% endif %}
+    </nav>
+
+    {% if user %}
+        
+        <article>
+            <header>Añadir Nuevo Elemento</header>
+            <form action="/add" method="post" enctype="multipart/form-data">
+                <div class="grid">
+                    <label>
+                        Título / Nombre
+                        <input type="text" name="titulo" required>
+                    </label>
+                    <label>
+                        Descripción / Info
+                        <input type="text" name="descripcion" required>
+                    </label>
+                </div>
+                <label>
+                    Imagen (Opcional)
+                    <input type="file" name="image">
+                </label>
+                <button type="submit">Guardar</button>
+            </form>
+        </article>
+
+        <hr>
+
+        <h3>Listado Actual</h3>
+        <div class="grid-cards">
+            {% for item in items %}
+            <article class="card">
+                {% if item.image_url %}
+                    <img src="{{ item.image_url }}" alt="Imagen">
+                {% endif %}
+                <header><strong>{{ item.titulo }}</strong></header>
+                <p>{{ item.descripcion }}</p>
+                <footer>
+                    <small>Subido por: {{ item.owner_name }}</small>
+                    <form action="/delete" method="post" style="margin-top:10px;">
+                        <input type="hidden" name="titulo" value="{{ item.titulo }}">
+                        <button type="submit" class="contrast outline" style="width:100%;">Borrar</button>
+                    </form>
+                </footer>
+            </article>
+            {% endfor %}
+        </div>
+
+    {% else %}
+        <article style="text-align: center; margin-top: 10vh;">
+            <header>Bienvenido al Examen</header>
+            <p>Necesitas iniciar sesión para gestionar la aplicación.</p>
+            <a href="/login" role="button" class="contrast">Iniciar sesión con Google</a>
+        </article>
+    {% endif %}
+
+</body>
+</html>
